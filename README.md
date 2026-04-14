@@ -1,1 +1,147 @@
-# -
+<!DOCTYPE html>
+<html lang='ja'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>JSON List Editor</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
+        .input-group { background: #f4f4f4; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .field { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type='text'] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btns { display: flex; gap: 10px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-add:hover { background-color: #218838; }
+        .btn-update { background-color: #007bff; color: white; display: none; }
+        .btn-cancel { background-color: #6c757d; color: white; display: none; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #eee; }
+        .action-btns { display: flex; gap: 5px; }
+        .btn-edit { background-color: #ffc107; color: black; font-size: 12px; }
+        .btn-delete { background-color: #dc3545; color: white; font-size: 12px; }
+        
+        .output-section { margin-top: 30px; }
+        textarea { width: 100%; height: 200px; font-family: monospace; padding: 10px; border: 1px solid #ccc; background: #fafafa; box-sizing: border-box; }
+        .btn-json { background-color: #17a2b8; color: white; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>リストエディター</h2>
+
+    <div class='input-group'>
+        <div class='field'>
+            <label>単語 (w):</label>
+            <input type='text' id='wordInput' placeholder='例: a piece of ～'>
+        </div>
+        <div class='field'>
+            <label>意味 (m):</label>
+            <input type='text' id='meaningInput' placeholder='例: １つの～'>
+        </div>
+        <div class='btns'>
+            <button id='addBtn' class='btn-add' onclick='addItem()'>追加</button>
+            <button id='updateBtn' class='btn-update' onclick='updateItem()'>更新</button>
+            <button id='cancelBtn' class='btn-cancel' onclick='resetForm()'>キャンセル</button>
+        </div>
+    </div>
+
+    <table id='listTable'>
+        <thead>
+            <tr>
+                <th style='width: 10%'>ID</th>
+                <th>単語 (w)</th>
+                <th>意味 (m)</th>
+                <th style='width: 20%'>操作</th>
+            </tr>
+        </thead>
+        <tbody id='listBody'></tbody>
+    </table>
+
+    <div class='output-section'>
+        <button class='btn-json' onclick='generateJSON()'>JSONを出力する</button>
+        <textarea id='jsonOutput' readonly placeholder='ここに結果が表示されます'></textarea>
+    </div>
+
+    <script>
+        let items = [];
+        let editIndex = -1;
+
+        function render() {
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = '';
+            
+            items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.w}</td>
+                    <td>${item.m}</td>
+                    <td class='action-btns'>
+                        <button class='btn-edit' onclick='startEdit(${index})'>編集</button>
+                        <button class='btn-delete' onclick='deleteItem(${index})'>削除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function addItem() {
+            const w = document.getElementById('wordInput').value;
+            const m = document.getElementById('meaningInput').value;
+            if (!w || !m) return;
+
+            const nextId = items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1;
+            items.push({ id: nextId, w: w, m: m });
+            resetForm();
+            render();
+        }
+
+        function deleteItem(index) {
+            if (confirm('この項目を削除しますか？')) {
+                items.splice(index, 1);
+                render();
+            }
+        }
+
+        function startEdit(index) {
+            editIndex = index;
+            const item = items[index];
+            document.getElementById('wordInput').value = item.w;
+            document.getElementById('meaningInput').value = item.m;
+            
+            document.getElementById('addBtn').style.display = 'none';
+            document.getElementById('updateBtn').style.display = 'inline-block';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+        }
+
+        function updateItem() {
+            const w = document.getElementById('wordInput').value;
+            const m = document.getElementById('meaningInput').value;
+            if (editIndex > -1) {
+                items[editIndex].w = w;
+                items[editIndex].m = m;
+                resetForm();
+                render();
+            }
+        }
+
+        function resetForm() {
+            editIndex = -1;
+            document.getElementById('wordInput').value = '';
+            document.getElementById('meaningInput').value = '';
+            document.getElementById('addBtn').style.display = 'inline-block';
+            document.getElementById('updateBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function generateJSON() {
+            const json = JSON.stringify(items, null, 2);
+            document.getElementById('jsonOutput').value = json;
+        }
+    </script>
+</body>
+</html>
